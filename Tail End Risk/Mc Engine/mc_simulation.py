@@ -34,6 +34,8 @@ def run_monte_carlo(stock_price, benchmark_price, stats, days_to_simulate, num_s
     return {
         'stock_paths': stock_paths,
         'benchmark_paths': benchmark_paths,
+        'stock_final_prices': stock_final_prices,
+        'benchmark_final_prices': benchmark_final_prices,
         'stock_final_returns': stock_final_returns,
         'benchmark_final_returns': benchmark_final_returns
     }

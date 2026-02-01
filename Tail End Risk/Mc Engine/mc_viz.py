@@ -160,12 +160,18 @@ def _plot_percentile_table(ax, data):
 def _plot_position_sizing(ax, data):
     ax.axis('tight')
     ax.axis('off')
-    loss_5th = data["stock_percentiles"][data["stock_percentiles"]['percentile'] == 5]['return'].values[0]
-    capital_at_risk = abs(loss_5th) / 100 * data["starting_capital"]
+    
+    # Use CVaR (95%) for position sizing - more conservative than just 5th percentile
+    # CVaR captures the average loss in the worst 5% of scenarios
+    cvar_95 = data["stock_cvar"]['cvar_95']
+    var_95 = data["stock_cvar"]['var_95']  # 5th percentile for comparison
+    
+    # Position sizing based on CVaR
+    capital_at_risk_cvar = abs(cvar_95) / 100 * data["starting_capital"]
     max_loss_dollars = data["max_tolerable_loss_pct"] / 100 * data["starting_capital"]
     
-    if abs(loss_5th) > 0:
-        recommended_position = min(max_loss_dollars / abs(loss_5th) * 100, data["starting_capital"])
+    if abs(cvar_95) > 0:
+        recommended_position = min(max_loss_dollars / abs(cvar_95) * 100, data["starting_capital"])
     else:
         recommended_position = data["starting_capital"]
     
@@ -176,7 +182,9 @@ def _plot_position_sizing(ax, data):
         ['Starting Capital', f'${data["starting_capital"]:,.2f}'],
         ['Max Loss Tolerance', f'{data["max_tolerable_loss_pct"]}%'],
         ['', ''],
-        ['5th Percentile Loss', f'{loss_5th:.2f}%'],
+        ['VaR (95%)', f'{var_95:.2f}%'],
+        ['CVaR (95%)', f'{cvar_95:.2f}%'],
+        ['', ''],
         ['Recommended Position', f'${recommended_position:,.2f}'],
         ['Position %', f'{position_pct:.1f}%'],
         ['Cash %', f'{cash_pct:.1f}%'],
@@ -184,9 +192,14 @@ def _plot_position_sizing(ax, data):
     
     table = ax.table(cellText=table_data, cellLoc='left', loc='center', colWidths=[0.6, 0.4])
     table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1, 2)
-    ax.set_title('Position Sizing Recommendation', fontsize=12, fontweight='bold', pad=20)
+    table.set_fontsize(9)
+    table.scale(1, 1.8)
+    
+    # Highlight CVaR row
+    table[(4, 0)].set_facecolor('#fff3cd')
+    table[(4, 1)].set_facecolor('#fff3cd')
+    
+    ax.set_title('Position Sizing (CVaR-Based)', fontsize=12, fontweight='bold', pad=20)
 
 def _plot_statistical_summary(ax, data):
     ax.axis('tight')
@@ -197,15 +210,24 @@ def _plot_statistical_summary(ax, data):
         ['Ann. Volatility', f'{data["stock_volatility"]*100:.2f}%', f'{data["benchmark_volatility"]*100:.2f}%'],
         ['Correlation', f'{data["correlation"]:.3f}', '1.000'],
         ['Beta', f'{data["beta"]:.3f}', '1.000'],
+        ['', '', ''],
+        ['VaR (95%)', f'{data["stock_cvar"]["var_95"]:.2f}%', f'{data["benchmark_cvar"]["var_95"]:.2f}%'],
+        ['CVaR (95%)', f'{data["stock_cvar"]["cvar_95"]:.2f}%', f'{data["benchmark_cvar"]["cvar_95"]:.2f}%'],
     ]
     
     table = ax.table(cellText=table_data, cellLoc='center', loc='center', colWidths=[0.4, 0.3, 0.3])
     table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1, 2)
+    table.set_fontsize(9)
+    table.scale(1, 1.8)
     
+    # Header styling
     for j in range(3):
         table[(0, j)].set_facecolor('#4CAF50')
         table[(0, j)].set_text_props(weight='bold', color='white')
+    
+    # Highlight CVaR row
+    table[(7, 0)].set_facecolor('#fff3cd')
+    table[(7, 1)].set_facecolor('#fff3cd')
+    table[(7, 2)].set_facecolor('#fff3cd')
     
     ax.set_title('Statistical Summary', fontsize=12, fontweight='bold', pad=20)

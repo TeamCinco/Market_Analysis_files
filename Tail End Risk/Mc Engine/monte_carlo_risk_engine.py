@@ -2,7 +2,7 @@
 from mc_data import download_data, set_starting_prices
 from mc_stats import calculate_statistics
 from mc_simulation import run_monte_carlo
-from mc_percentiles import calculate_percentiles
+from mc_percentiles import calculate_percentiles, calculate_cvar
 from mc_viz import create_visualization
 
 class MonteCarloRiskEngine:
@@ -46,13 +46,26 @@ class MonteCarloRiskEngine:
         )
         self.stock_paths = sim_results['stock_paths']
         self.benchmark_paths = sim_results['benchmark_paths']
+        self.stock_final_prices = sim_results['stock_final_prices']
+        self.benchmark_final_prices = sim_results['benchmark_final_prices']
         self.stock_final_returns = sim_results['stock_final_returns']
         self.benchmark_final_returns = sim_results['benchmark_final_returns']
         
         # Calculate percentiles
         self.stock_percentiles, self.benchmark_percentiles = calculate_percentiles(
-            self.stock_final_returns, self.benchmark_final_returns
+            self.stock_final_returns, self.benchmark_final_returns,
+            self.stock_final_prices, self.benchmark_final_prices
         )
+        
+        # Calculate CVaR (Conditional Value at Risk)
+        self.stock_cvar = calculate_cvar(self.stock_final_returns)
+        self.benchmark_cvar = calculate_cvar(self.benchmark_final_returns)
+        
+        print(f"\nRisk Metrics:")
+        print(f"  VaR (95%):  {self.stock_cvar['var_95']:.2f}% (5th percentile)")
+        print(f"  CVaR (95%): {self.stock_cvar['cvar_95']:.2f}% (avg loss in worst 5%)")
+        print(f"  VaR (99%):  {self.stock_cvar['var_99']:.2f}% (1st percentile)")
+        print(f"  CVaR (99%): {self.stock_cvar['cvar_99']:.2f}% (avg loss in worst 1%)")
         
         print("\n✓ Initialization complete!")
     
@@ -82,7 +95,9 @@ class MonteCarloRiskEngine:
             "benchmark_expected_return": self.benchmark_expected_return,
             "starting_capital": self.starting_capital,
             "max_tolerable_loss_pct": self.max_tolerable_loss_pct,
-            "custom_stock_price": getattr(self, 'custom_stock_price', None)
+            "custom_stock_price": getattr(self, 'custom_stock_price', None),
+            "stock_cvar": self.stock_cvar,
+            "benchmark_cvar": self.benchmark_cvar
         }
         
         return create_visualization(data)

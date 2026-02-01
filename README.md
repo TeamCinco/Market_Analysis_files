@@ -41,7 +41,7 @@ python run_analysis.py
 1. Downloads historical data (yfinance)
 2. Calculates annualized volatility, correlation, beta
 3. Runs correlated Monte Carlo simulations (geometric Brownian motion)
-4. Calculates percentiles (1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, 99th)
+4. Calculates percentiles (1st, 5th, 10th, 25th, 50th, 75th, 90th, 95th, 99th) *as of 2/1/26 I added VAR and Cvar calculations in the output.*
 5. Recommends position size based on 5th percentile loss vs max tolerable loss
 6. Generates 9-panel visualization
 
