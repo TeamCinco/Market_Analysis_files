@@ -24,7 +24,7 @@ STARTING_CAPITAL = 1000         # Your starting capital in dollars
 MAX_TOLERABLE_LOSS_PCT = 14     # Max % loss you can handle (e.g., 15, 20, 25)
 
 # Simulation Parameters
-DAYS_TO_SIMULATE = 30           # Trading days to simulate (252 = 1 year, 126 = 6 months)
+DAYS_TO_SIMULATE = 90           # Trading days to simulate (252 = 1 year, 126 = 6 months)
 NUM_SIMULATIONS = 25000         # Number of Monte Carlo paths (more = slower but more accurate)
 HISTORICAL_WINDOW = 252*6       # Days to look back for volatility calculation
 

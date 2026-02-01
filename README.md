@@ -123,3 +123,18 @@ matplotlib
 - Correlation assumes stable relationship
 - No transaction costs, slippage, or liquidity constraints
 - Single-asset analysis (no portfolio effects)
+
+
+#How to use:
+You don't run the script every day. Run it once per week (Sunday night) for each stock on your watchlist. Note the percentile prices from the output image and set alerts at the 10th percentile level. Then go live your life.
+
+When an alert triggers (stock dropped 5-10% in a day), open run_analysis.py and set:
+pythonCUSTOM_STOCK_PRICE = 400.0       *Price before the drop*
+TARGET_PRICE_TO_CHECK = 380.0    *Current price after drop*
+
+Run it. Terminal shows the percentile rank. If it's 5th-15th percentile, continue. If >15th, ignore it - not extreme enough.
+Next, check fundamentals in 5 minutes: Why did it drop? Call an employee or check industry data. Business still strong?
+Then check IV: Pull current implied vol from your broker, compare to the realized vol number in your Monte Carlo output. IV lower than realized = options are cheap.
+
+If all three align (percentile extreme + fundamentals intact + IV cheap), buy one 90-120 day OTM call with $800-1000. Target exit at median recovery (50th percentile price from your table). Stop if fundamentals change or stock hits 1st percentile.
+That's it. 3-5 trades per year max.
