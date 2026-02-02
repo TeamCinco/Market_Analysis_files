@@ -16,7 +16,7 @@ from monte_carlo_risk_engine import MonteCarloRiskEngine
 # ============================================================================
 
 # Stock
-STOCK_SYMBOL = "SPY"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
+STOCK_SYMBOL = "MSFT"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
 
 # Capital and Risk Parameters
 STARTING_CAPITAL = 1000         # Your starting capital in dollars

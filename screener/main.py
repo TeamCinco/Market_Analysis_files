@@ -3,6 +3,7 @@ Monte Carlo Stock Screener
 Analyzes all stocks in ticker.txt and outputs to Excel
 """
 import sys
+import signal
 from pathlib import Path
 
 # Add engine directory to path
@@ -24,14 +25,44 @@ DAYS_TO_SIMULATE = 90
 NUM_SIMULATIONS = 10000
 HISTORICAL_WINDOW = 252*6
 
+# Global results list for signal handler
+RESULTS = []
+
+# ============================================================================
+# SIGNAL HANDLER FOR CTRL+C
+# ============================================================================
+
+def signal_handler(sig, frame):
+    """Save results when user hits Ctrl+C"""
+    print("\n\n" + "="*80)
+    print("INTERRUPTED - Saving partial results...")
+    print("="*80)
+    
+    if RESULTS:
+        try:
+            write_results_to_excel(RESULTS, OUTPUT_FILE)
+            print(f"\nSaved {len(RESULTS)} results before exit")
+        except Exception as e:
+            print(f"Error saving: {e}")
+    else:
+        print("No results to save")
+    
+    sys.exit(0)
+
+# Register signal handler
+signal.signal(signal.SIGINT, signal_handler)
+
 # ============================================================================
 # MAIN
 # ============================================================================
 
 def main():
+    global RESULTS
+    
     print("\n" + "="*80)
     print("MONTE CARLO STOCK SCREENER")
     print("="*80)
+    print("\nTIP: Press Ctrl+C to save partial results and exit")
     
     # Load tickers
     print(f"\nLoading tickers from: {TICKER_FILE}")
@@ -42,7 +73,8 @@ def main():
     print(f"\nRunning Monte Carlo analysis ({NUM_SIMULATIONS:,} simulations, {DAYS_TO_SIMULATE} days)")
     print("="*80)
     
-    results = []
+    save_interval = 100  # Save every 100 stocks
+    
     for i, ticker in enumerate(tickers, 1):
         print(f"[{i}/{len(tickers)}] {ticker}...", end=" ", flush=True)
         
@@ -54,18 +86,26 @@ def main():
         )
         
         if result['success']:
-            results.append(result)
+            RESULTS.append(result)
             print(f"✓ (drop: {result['drop_from_high_pct']:.1f}%, p10: {result['p10']:.1f}%)")
         else:
             print(f"✗ Failed")
+        
+        # Periodic save every 100 stocks
+        if i % save_interval == 0 and RESULTS:
+            print(f"\n[Auto-saving progress: {len(RESULTS)} stocks completed]")
+            try:
+                write_results_to_excel(RESULTS, OUTPUT_FILE)
+            except Exception as e:
+                print(f"Warning: Auto-save failed: {e}")
     
-    # Write to Excel
+    # Final save and analysis
     print("\n" + "="*80)
-    print(f"Successful: {len(results)}/{len(tickers)}")
+    print(f"Successful: {len(RESULTS)}/{len(tickers)}")
     
-    if results:
+    if RESULTS:
         import pandas as pd
-        df = pd.DataFrame(results)
+        df = pd.DataFrame(RESULTS)
         
         # Show selling opportunities
         print("\n" + "="*80)
@@ -89,8 +129,8 @@ def main():
         else:
             print("  None found matching all criteria")
         
-        # Write to Excel
-        write_results_to_excel(results, OUTPUT_FILE)
+        # Write final Excel
+        write_results_to_excel(RESULTS, OUTPUT_FILE)
     
     print("\n" + "="*80)
     print("DONE - Open Excel and filter for your criteria")

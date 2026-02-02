@@ -1,11 +1,16 @@
 """Excel output - clean and simple"""
 import pandas as pd
+from pathlib import Path
 
 def write_results_to_excel(results, output_path):
     """
     Write screening results to Excel
     Columns optimized for finding selling opportunities
     """
+    # Create output directory if it doesn't exist
+    output_dir = Path(output_path).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     df = pd.DataFrame(results)
     
     # Sort by drop_from_high_pct (most dropped first)
