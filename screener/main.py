@@ -55,47 +55,45 @@ def main():
         
         if result['success']:
             results.append(result)
-            print(f"✓ (5th: {result['p5']:.1f}%, 50th: {result['p50']:.1f}%)")
+            print(f"✓ (drop: {result['drop_from_high_pct']:.1f}%, p10: {result['p10']:.1f}%)")
         else:
-            print(f"✗ {result['error'][:50]}")
+            print(f"✗ Failed")
     
     # Write to Excel
     print("\n" + "="*80)
     print(f"Successful: {len(results)}/{len(tickers)}")
     
     if results:
-        write_results_to_excel(results, OUTPUT_FILE)
-        
-        # Summary stats
         import pandas as pd
         df = pd.DataFrame(results)
         
-        print("\nSUMMARY STATISTICS:")
-        print(f"  Avg Volatility: {df['volatility'].mean():.1f}%")
-        print(f"  Avg 5th Percentile: {df['p5'].mean():.1f}%")
-        print(f"  Avg Median Return: {df['p50'].mean():.1f}%")
-        print(f"  Avg 95th Percentile: {df['p95'].mean():.1f}%")
+        # Show selling opportunities
+        print("\n" + "="*80)
+        print("SELLING OPPORTUNITIES:")
+        print("="*80)
         
-        # Extreme movers
-        extreme_down = df[df['p5'] <= -10]
-        extreme_up = df[df['p95'] >= 10]
+        selling_zone = df[
+            (df['drop_from_high_pct'] <= -10) &  # Already dropped 10%+
+            (df['p10'] >= -10) &                  # Limited forward downside
+            (df['p10'] <= -5) &
+            (df['volatility'] >= 15) &            # Enough vol for premium
+            (df['volatility'] <= 30)              # Not too crazy
+        ]
         
-        print(f"\nEXTREME MOVES:")
-        print(f"  Stocks with 5th percentile <= -10%: {len(extreme_down)}")
-        print(f"  Stocks with 95th percentile >= +10%: {len(extreme_up)}")
+        print(f"\nFound {len(selling_zone)} candidates:")
+        print(f"  Criteria: Dropped 10%+, forward p10 -5% to -10%, vol 15-30%\n")
         
-        if len(extreme_down) > 0:
-            print(f"\nMost Downside Risk (5th percentile):")
-            for _, row in extreme_down.nsmallest(5, 'p5').iterrows():
-                print(f"    {row['ticker']}: {row['p5']:.1f}%")
+        if len(selling_zone) > 0:
+            display = selling_zone[['ticker', 'current_price', 'drop_from_high_pct', 'p10', 'volatility']].head(20)
+            print(display.to_string(index=False))
+        else:
+            print("  None found matching all criteria")
         
-        if len(extreme_up) > 0:
-            print(f"\nMost Upside Potential (95th percentile):")
-            for _, row in extreme_up.nlargest(5, 'p95').iterrows():
-                print(f"    {row['ticker']}: {row['p95']:.1f}%")
+        # Write to Excel
+        write_results_to_excel(results, OUTPUT_FILE)
     
     print("\n" + "="*80)
-    print("DONE")
+    print("DONE - Open Excel and filter for your criteria")
     print("="*80)
 
 if __name__ == "__main__":

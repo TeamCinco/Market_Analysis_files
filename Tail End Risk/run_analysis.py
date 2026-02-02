@@ -16,7 +16,7 @@ from monte_carlo_risk_engine import MonteCarloRiskEngine
 # ============================================================================
 
 # Stock
-STOCK_SYMBOL = "TSLA"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
+STOCK_SYMBOL = "SPY"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
 
 # Capital and Risk Parameters
 STARTING_CAPITAL = 1000         # Your starting capital in dollars
@@ -25,7 +25,7 @@ MAX_TOLERABLE_LOSS_PCT = 14     # Max % loss you can handle (e.g., 15, 20, 25)
 # Simulation Parameters
 DAYS_TO_SIMULATE = 90           # Trading days to simulate (252 = 1 year, 126 = 6 months)
 NUM_SIMULATIONS = 25000         # Number of Monte Carlo paths (more = slower but more accurate)
-HISTORICAL_WINDOW = 252*6       # Days to look back for volatility calculation
+HISTORICAL_WINDOW = 252      # Days to look back for volatility calculation
 
 # ============================================================================
 # CUSTOM STARTING PRICES (NEW FEATURE)
@@ -38,7 +38,7 @@ HISTORICAL_WINDOW = 252*6       # Days to look back for volatility calculation
 #     Set CUSTOM_STOCK_PRICE = 400.0, then check output
 #   - Want to test "what if" scenarios from different price levels
 #
-CUSTOM_STOCK_PRICE = 498.83   # Example: 400.0 (CAT price before drop)
+CUSTOM_STOCK_PRICE = None   # Example: 400.0 (CAT price before drop)
 
 # ============================================================================
 # TARGET PRICE ANALYSIS (OPTIONAL)
@@ -48,7 +48,7 @@ CUSTOM_STOCK_PRICE = 498.83   # Example: 400.0 (CAT price before drop)
 # 
 # Example: Stock dropped to $380, want to know if that's 5th, 10th, or 25th percentile
 #
-TARGET_PRICE_TO_CHECK = 430.41      # Example: 380.0
+TARGET_PRICE_TO_CHECK = None      # Example: 380.0
 
 # ============================================================================
 # RUN THE ANALYSIS
