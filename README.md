@@ -126,3 +126,17 @@ matplotlib
 Built for low-frequency tactical options trading (3-5 trades/year) on blue chip stocks during volatile bull markets. Not for day trading, market timing, or portfolio optimization.
 
 The Monte Carlo tells you where you are in the distribution. You still need to check fundamentals and IV before executing trades.
+
+# Example:
+You see a stocks recent movements place it at a low percentile (5-1 percentile). 
+
+Then you remove the custom and target price and see the foward look to determine where to place your strikes for the credit put spread.
+
+# What I am missing:
+1. info about the IV vs Realized IV vs Realized IV... that will help our decision making
+
+Example: 
+Realized Vol  | Current IV | IV vs Realized | Action
+17.11%       | 14%        | Cheap          | Don't sell, buy calls instead
+17.11%       | 18%        | Fair           | Marginal
+17.11%       | 25%+       | Expensive      | SELL PUTS ✓
