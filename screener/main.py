@@ -18,7 +18,7 @@ from engine.excel_writer import write_results_to_excel
 # CONFIGURATION
 # ============================================================================
 
-TICKER_FILE = "/Users/jazzhashzzz/Documents/Market_Analysis_files/ticker.txt"
+TICKER_FILE = "/Users/jazzhashzzz/Documents/Market_Analysis_files/ticker_filtered.txt"
 OUTPUT_FILE = "/Users/jazzhashzzz/Documents/Market_Analysis_files/output/screener/screening_results.xlsx"
 
 DAYS_TO_SIMULATE = 90
