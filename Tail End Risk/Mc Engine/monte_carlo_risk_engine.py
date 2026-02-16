@@ -7,17 +7,15 @@ from mc_viz import create_visualization
 from mc_risk_state import calculate_risk_state_score
 
 class MonteCarloRiskEngine:
-    def __init__(self, stock_symbol, starting_capital, days_to_simulate,
-                 num_simulations, historical_window, max_tolerable_loss_pct,
+    def __init__(self, stock_symbol, days_to_simulate,
+                 num_simulations, historical_window,
                  custom_stock_price=None):
         
         self.stock_symbol = stock_symbol
-        self.starting_capital = starting_capital
         self.days_to_simulate = days_to_simulate
         self.num_simulations = num_simulations
         self.historical_window = historical_window
-        self.max_tolerable_loss_pct = max_tolerable_loss_pct
-        self.custom_stock_price = custom_stock_price  # Store for visualization
+        self.custom_stock_price = custom_stock_price
         
         # Download data
         self.stock_data = download_data(stock_symbol, historical_window)
@@ -85,8 +83,6 @@ class MonteCarloRiskEngine:
             "historical_window": self.historical_window,
             "stock_volatility": self.stock_volatility,
             "stock_expected_return": self.stock_expected_return,
-            "starting_capital": self.starting_capital,
-            "max_tolerable_loss_pct": self.max_tolerable_loss_pct,
             "custom_stock_price": self.custom_stock_price,
             "stock_cvar": self.stock_cvar,
             "target_price_to_check": target_price_to_check,

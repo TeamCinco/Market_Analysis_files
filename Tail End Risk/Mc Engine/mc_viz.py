@@ -358,27 +358,62 @@ def _plot_risk_state_panel(ax, data):
 
     ax.axis('off')
 
-    risk_state = data.get("risk_state", {})
+    rs = data.get("risk_state", {})
 
-    score = risk_state.get("risk_score", 0)
-    regime = risk_state.get("regime", "Unknown")
+    score = rs.get("risk_state_score", 0)
+    vol_ratio = rs.get("vol_ratio", 0)
+    tail_ratio = rs.get("tail_ratio", 0)
+    jump_freq = rs.get("jump_freq", 0)
+    dist_width = rs.get("distribution_width", 0)
+
+    # Classify regime from composite score
+    if score >= 65:
+        regime = "Elevated"
+    elif score >= 35:
+        regime = "Neutral"
+    else:
+        regime = "Compressed"
 
     rows = [
-        ["Risk Score", f"{score:.1f} / 100"],
+        ["Risk State Score", f"{score:.1f} / 100"],
         ["Regime", regime],
-        ["Vol Z-Score", f'{risk_state.get("vol_z", 0):.2f}'],
-        ["Tail Ratio", f'{risk_state.get("tail_ratio", 0):.2f}'],
+        ["", ""],
+        ["Vol Regime Ratio (20d/100d)", f"{vol_ratio:.2f}"],
+        ["Tail Thickness (CVaR/VaR)", f"{tail_ratio:.2f}"],
+        ["Jump Frequency (>3% drops)", f"{jump_freq*100:.2f}%"],
+        ["Distribution Width (p95-p5)", f"{dist_width:.1f}%"],
     ]
 
     table = ax.table(
         cellText=rows,
-        colLabels=["Metric", "Value"],
+        colLabels=["Component", "Value"],
         loc='center',
         cellLoc='center'
     )
 
     table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1, 2)
+    table.set_fontsize(9)
+    table.scale(1, 2.2)
+
+    # Header
+    for j in range(2):
+        table[(0, j)].set_facecolor('#4CAF50')
+        table[(0, j)].set_text_props(weight='bold', color='white')
+
+    # Color the score row based on regime
+    if score >= 65:
+        table[(1, 1)].set_facecolor('#ffcccc')
+        table[(2, 1)].set_facecolor('#ffcccc')
+    elif score >= 35:
+        table[(1, 1)].set_facecolor('#ffffcc')
+        table[(2, 1)].set_facecolor('#ffffcc')
+    else:
+        table[(1, 1)].set_facecolor('#ccffcc')
+        table[(2, 1)].set_facecolor('#ccffcc')
+
+    table[(1, 0)].set_text_props(weight='bold')
+    table[(1, 1)].set_text_props(weight='bold', size=11)
+    table[(2, 0)].set_text_props(weight='bold')
+    table[(2, 1)].set_text_props(weight='bold')
 
     ax.set_title("Risk State Engine", fontweight='bold')

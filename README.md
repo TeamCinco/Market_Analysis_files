@@ -1,18 +1,18 @@
 # Monte Carlo Risk Engine
 
-A Monte Carlo–based risk analysis tool for **single-asset price distributions**, built to identify **statistical extremes** in price movement and frame **forward downside risk** for options execution.
+A Monte Carlo risk analysis tool for single equity price distributions. Maps forward downside risk and tail structure to support position sizing and strike placement for options execution.
 
-This tool provides **context**, not predictions.
+This tool provides statistical context, not predictions.
 
 ---
 
 ## What It Does
 
-Runs **25,000 Monte Carlo simulations** over a **60-day horizon** to answer:
+Runs 25,000 Monte Carlo simulations over a configurable horizon to answer:
 
-> *“Is this price move statistically extreme, or normal variance?”*
+> "Under realistic dispersion assumptions, how wide can outcomes be and where is the real left tail?"
 
-Designed to support **options entry timing** (primarily credit structures) on **high-quality assets** during **volatile bull market regimes**.
+Designed to support risk management and options structure decisions (primarily credit verticals) on liquid equities.
 
 ---
 
@@ -21,15 +21,51 @@ Designed to support **options entry timing** (primarily credit structures) on **
 The engine separates two questions:
 
 1. **Backward-looking:**
-   Where does a realized price move fall in the historical distribution?
+   Where does a realized price move fall in the simulated distribution?
 
 2. **Forward-looking:**
-   From *this price*, what does normal downside risk look like over the next 60 days?
+   From this price, what does downside risk look like over the next N days?
 
-This distinction is critical:
+This distinction matters:
 
-* **Backward percentiles** = signal (oversold / stretched)
-* **Forward percentiles** = strike placement & risk definition
+* **Backward percentiles** = statistical context for a move that already happened
+* **Forward percentiles** = strike placement and spread width discipline
+
+---
+
+## Simulation Model
+
+The engine does not use vanilla Geometric Brownian Motion. The core simulation has three departures from standard Gaussian assumptions:
+
+**Student-t shocks (df=5):** Random shocks are drawn from a fat-tailed distribution instead of normal. This produces more realistic extreme move frequency. Scaled to unit variance so the average day is unchanged but tail events occur more often.
+
+**EWMA volatility clustering (lambda=0.94):** Volatility evolves through each simulation path. A large move on day 10 increases volatility on day 11. Calm periods stay calm. This introduces path dependence that constant-sigma GBM ignores.
+
+**Distributed jump process (2% daily probability, -4% magnitude):** Discrete downside shocks can occur on any day across the full simulation, not just at expiration. Models gap risk from earnings, macro events, or sudden sentiment shifts.
+
+**Drift:** Uses a risk-free rate proxy (currently 4.2%) instead of historical mean return. Historical equity drift is unstable on short horizons and adds noise without improving tail estimation.
+
+**Volatility stress ladder:** Each run produces three scenario sets at 1.0x, 1.25x, and 1.5x base volatility to show how the distribution widens under stress.
+
+---
+
+## Risk State Score
+
+A composite measure of current tail conditions. Four components normalized to 0-1 and averaged into a single score (0-100):
+
+| Component | What It Measures | Normalization Range |
+|-----------|-----------------|-------------------|
+| Vol Regime Ratio | 20-day realized vol / 100-day realized vol | 0.7 - 1.5 |
+| Tail Thickness | CVaR(99) / VaR(99) | 1.1 - 1.6 |
+| Jump Frequency | % of historical days with >3% drops | 0 - 3% |
+| Distribution Width | 95th percentile minus 5th percentile | 10% - 60% |
+
+**Interpretation:**
+* Below 35 = Compressed regime. Tails are tight.
+* 35-65 = Neutral. Normal dispersion.
+* Above 65 = Elevated. Distribution is wide, tails are thick. Respect the risk.
+
+The score does not predict direction. It tells you how fragile the distribution is so you can calibrate aggression on spread placement and position sizing.
 
 ---
 
@@ -37,17 +73,18 @@ This distinction is critical:
 
 ```
 /Tail End Risk/
-├── run_analysis.py
+├── run_analysis.py                  (runner / parameter config)
 └── /Mc Engine/
-    ├── monte_carlo_risk_engine.py
-    ├── mc_data.py          (35 lines)
-    ├── mc_stats.py         (21 lines)
-    ├── mc_simulation.py    (25 lines)
-    ├── mc_percentiles.py   (35 lines)
-    └── mc_viz.py           (144 lines)
+    ├── monte_carlo_risk_engine.py   (orchestrator class)
+    ├── mc_data.py                   (data download via yfinance)
+    ├── mc_stats.py                  (volatility + drift calculation)
+    ├── mc_simulation.py             (Student-t, EWMA, jumps, stress ladder)
+    ├── mc_percentiles.py            (percentile + CVaR calculation)
+    ├── mc_risk_state.py             (4-component risk state score)
+    └── mc_viz.py                    (8-panel dashboard visualization)
 ```
 
-**Total:** ~331 lines
+**Total:** ~950 lines
 
 ---
 
@@ -56,11 +93,10 @@ This distinction is critical:
 Configure parameters in `run_analysis.py`:
 
 ```python
-STOCK_SYMBOL = "CAT"
-STARTING_CAPITAL = 1000  # ignored, legacy
-DAYS_TO_SIMULATE = 60
+STOCK_SYMBOL = "MSFT"
+DAYS_TO_SIMULATE = 45       # match your trade horizon (45 DTE = 45)
 NUM_SIMULATIONS = 25000
-HISTORICAL_WINDOW = 252 * 6
+HISTORICAL_WINDOW = 252     # lookback for vol calc (252 = 1yr, 126 = 6mo)
 ```
 
 Run:
@@ -73,162 +109,134 @@ python run_analysis.py
 
 ## Output
 
-### Saved Visualization (`/output/monte_carlo_risk_engine/`)
+### Dashboard (`/output/monte_carlo_risk_engine/`)
 
-A 4-panel chart including:
+An 8-panel visualization:
 
-* Simulated price path fan
-* Return distribution histogram
-* Percentile table (1st–99th)
-* Risk summary (VaR & CVaR)
+| Panel | What It Shows |
+|-------|--------------|
+| Price Path Percentiles | Simulated price fan (5th through 95th) |
+| Return Distribution | Final return histogram with 1st, 5th, median lines |
+| Return Percentiles | Table of returns at each percentile |
+| Risk Summary | VaR, CVaR at 95% and 99% confidence |
+| Stress Distributions | Overlaid histograms for 1.0x / 1.25x / 1.5x vol |
+| Tail Shift Under Stress | How 5th and 1st percentile move under stress |
+| Strike Probability Guide | Percentile to strike price mapping with breach probability |
+| Risk State Engine | All 4 components + composite score + regime classification |
 
-### Terminal Summary
+### Terminal Output
 
 ```
-Realized Vol: 32.53%
-VaR (95%):  -19.69%
-CVaR (95%): -25.72%
+Annual Volatility:    26.40%
+VaR (95%):           -28.49%
+CVaR (95%):          -36.16%
+Risk State Score:     71.3/100
+Regime:               Elevated
 ```
 
 ---
 
 ## Backtest Mode (Realized Move Analysis)
 
-Used to determine **where an actual price move falls** in the distribution.
+Used to determine where an actual price move falls in the distribution.
 
 ```python
 CUSTOM_STOCK_PRICE = 400.0      # price before move
-TARGET_PRICE_TO_CHECK = 380.0  # price after move
+TARGET_PRICE_TO_CHECK = 380.0   # price after move
 ```
 
-Outputs:
+Outputs percentile rank of the move and statistical context.
 
-* Percentile rank of the move
-* Interpretation (normal, rare, extreme)
+This answers: "How unusual was this drop relative to current volatility regime?"
 
-This answers:
-**“How unusual was the drop that already happened?”**
+Note: this is not historical replay. It applies current vol conditions to a hypothetical starting price. Valid for regime-aware context, not for true backtesting.
+
+---
+
+## Tunable Parameters
+
+| Parameter | Default | What It Controls |
+|-----------|---------|-----------------|
+| `DAYS_TO_SIMULATE` | 90 | Simulation horizon. Set to match your DTE. |
+| `HISTORICAL_WINDOW` | 252 | Lookback for base volatility. Shorter = more responsive. |
+| `risk_free_rate` | 0.042 | Drift proxy. Set in `monte_carlo_risk_engine.py`. |
+| `jump_prob` | 0.02 | Daily jump probability. Set in `mc_simulation.py`. |
+| `jump_magnitude` | -0.04 | Jump size. Negative = downside shock. |
+| `df` | 5 | Student-t degrees of freedom. Lower = fatter tails. |
+| `lambda_` | 0.94 | EWMA decay. Higher = slower vol response. |
+| `vol_multipliers` | [1.0, 1.25, 1.5] | Stress scenarios. |
 
 ---
 
 ## Standard Workflow
 
-1. Run MC analysis on watchlist (weekly)
-2. Record percentile price levels (p5, p10, p50, etc.)
-3. Set alerts near **10th percentile**
-4. When triggered:
-
-   * Run backtest with actual price
-   * Confirm price sits in **5th–15th percentile**
-5. Remove backtest inputs
-6. Use forward percentiles to convert returns → strike prices
-7. Verify **fundamentals + volatility regime + IV**
-8. Execute options structure if conditions pass
+1. Run analysis on watchlist
+2. Note percentile price levels and risk state score
+3. Set alerts near relevant percentile boundaries
+4. When triggered, run backtest with actual price for statistical context
+5. Use forward percentiles to map return levels to strike prices
+6. Check risk state score to calibrate spread width and sizing aggression
+7. Verify fundamentals, volatility regime, and IV independently
+8. Execute if conditions pass
 
 ---
 
 ## What This Tool Tells You
 
-* Where price sits in a **60-day return distribution**
-* Expected volatility over holding period
-* Tail risk severity (CVaR)
-* Median outcome (mean-reversion reference)
+* Where price sits in a simulated return distribution
+* Expected volatility over the holding period
+* Tail risk severity under base and stressed vol
+* How fragile current conditions are (risk state score)
+* Percentile-to-strike price mappings for spread placement
 
-### What It Does *Not* Do
+### What It Does Not Do
 
 * Predict direction
 * Generate buy/sell signals
-* Replace fundamentals or macro analysis
+* Replace fundamental or macro analysis
+* Price options or estimate implied volatility
 
-It provides **statistical context only**.
-
----
-
-## Notes: How to Use This for Options
-
-Typical use case:
-
-1. A stock experiences a sharp drop
-2. Backtest shows price at **low percentile (e.g. 5–10%)**
-3. Forward MC shows **contained downside tails**
-4. Convert forward percentiles to price levels:
-
-   ```
-   strike = current_price × (1 + percentile_return)
-   ```
-5. Sell credit put spreads **below p10**, protected near p5
-6. Rely on:
-
-   * Mean reversion
-   * Time decay
-   * Elevated IV
-
-This structure benefits from **fear already priced in**, not from further downside.
+It provides statistical context only.
 
 ---
 
 ## Missing Piece: IV vs Realized Volatility
 
-The Monte Carlo engine uses **realized volatility**.
-Execution requires comparing that to **implied volatility**.
+The engine uses realized volatility. Execution requires comparing that to implied volatility independently.
 
-### IV vs Realized Vol Framework
+| Realized Vol | Current IV | Interpretation | Action |
+|-------------|-----------|----------------|--------|
+| 17% | 14% | IV cheap | Don't sell premium |
+| 17% | 18% | Fair | Marginal |
+| 17% | 25%+ | IV expensive | Favorable for selling |
 
-| Realized Vol | Current IV | Interpretation | Action             |
-| ------------ | ---------- | -------------- | ------------------ |
-| 17.1%        | 14%        | IV cheap       | Don’t sell premium |
-| 17.1%        | 18%        | Fair           | Marginal           |
-| 17.1%        | 25%+       | IV expensive   | **Sell puts ✓**    |
-
-This comparison determines **whether the statistical edge is tradable**.
+This comparison determines whether the statistical edge is tradable. The engine does not perform it.
 
 ---
 
 ## Technical Details
 
-* Geometric Brownian Motion
-* Log-normal return assumption
-* Historical volatility from 6-year window
+* Modified GBM framework with three non-Gaussian departures
+* Student-t distributed shocks (df=5, scaled to unit variance)
+* EWMA conditional volatility (lambda=0.94, RiskMetrics standard)
+* Poisson-style jump overlay (distributed through full path)
+* Risk-free rate drift proxy
 * Random seed = 42 (reproducibility)
-* CVaR = mean of worst tail outcomes
-* Understates extreme tail risk (known limitation)
-
----
-
-## Removed Features
-
-Intentionally stripped to maintain focus:
-
-* No SPY benchmark
-* No beta or correlation
-* No market regime detection
-* No position sizing logic
-* No portfolio context
-
-Single asset. Single distribution. Clean signal.
+* CVaR = mean of worst tail outcomes (expected shortfall)
 
 ---
 
 ## Limitations
 
-* Assumes mean-reverting behavior
-* Breaks during regime shifts
-* No earnings or macro events modeled
-* No overnight gap modeling
-* Single asset only
+* Parametric model, not empirical bootstrap
+* Does not model earnings events or known catalysts
+* Single asset only, no correlation or portfolio context
+* Backtest mode uses current vol regime, not historical conditions
+* Jump parameters are assumptions, not calibrated to each name
+* No implied volatility integration
 
 ---
 
 ## Intended Use Case
 
-Low-frequency **tactical options trading**
-(~3–5 trades per year) on liquid, high-quality assets during **volatile but non-crisis bull markets**.
-
-The Monte Carlo tells you **where you are in the distribution**.
-You still must:
-
-* Validate regime
-* Check fundamentals
-* Confirm IV edge
-* Define failure conditions
-
+Risk management and strike placement discipline for options trading on liquid equities. The Monte Carlo maps the tail structure. You still must validate the regime, check fundamentals, confirm IV conditions, and define failure criteria independently.

@@ -16,16 +16,12 @@ from monte_carlo_risk_engine import MonteCarloRiskEngine
 # ============================================================================
 
 # Stock
-STOCK_SYMBOL = "MSFT"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
-
-# Capital and Risk Parameters
-STARTING_CAPITAL = 1000         # Your starting capital in dollars
-MAX_TOLERABLE_LOSS_PCT = 14     # Max % loss you can handle (e.g., 15, 20, 25)
+STOCK_SYMBOL = "SPY"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
 
 # Simulation Parameters
 DAYS_TO_SIMULATE = 90           # Trading days to simulate (252 = 1 year, 126 = 6 months)
 NUM_SIMULATIONS = 25000         # Number of Monte Carlo paths (more = slower but more accurate)
-HISTORICAL_WINDOW = 252      # Days to look back for volatility calculation
+HISTORICAL_WINDOW = 252         # Days to look back for volatility calculation
 
 # ============================================================================
 # CUSTOM STARTING PRICES (NEW FEATURE)
@@ -59,10 +55,9 @@ print("MONTE CARLO RISK ANALYSIS ENGINE")
 print("="*80)
 print(f"\nConfiguration:")
 print(f"  Stock:              {STOCK_SYMBOL}")
-print(f"  Starting Capital:   ${STARTING_CAPITAL:,.2f}")
-print(f"  Max Loss Tolerance: {MAX_TOLERABLE_LOSS_PCT}%")
 print(f"  Simulation Days:    {DAYS_TO_SIMULATE}")
 print(f"  Monte Carlo Paths:  {NUM_SIMULATIONS:,}")
+print(f"  Historical Window:  {HISTORICAL_WINDOW} days")
 
 if CUSTOM_STOCK_PRICE is not None:
     print(f"  Custom Stock Price: ${CUSTOM_STOCK_PRICE:.2f} (BACKTEST MODE)")
@@ -74,11 +69,9 @@ print("="*80)
 # Initialize the engine
 engine = MonteCarloRiskEngine(
     stock_symbol=STOCK_SYMBOL,
-    starting_capital=STARTING_CAPITAL,
     days_to_simulate=DAYS_TO_SIMULATE,
     num_simulations=NUM_SIMULATIONS,
     historical_window=HISTORICAL_WINDOW,
-    max_tolerable_loss_pct=MAX_TOLERABLE_LOSS_PCT,
     custom_stock_price=CUSTOM_STOCK_PRICE,
 )
 
