@@ -14,7 +14,7 @@ OUTPUT_TICKERS = "/Users/jazzhashzzz/Documents/Market_Analysis_files/ticker_filt
 
 BATCH_SIZE = 100
 MIN_PRICE = 5
-MIN_AVG_VOL = 8_000_000
+MIN_AVG_VOL = 800_000
 
 
 def load_tickers_from_json(path):

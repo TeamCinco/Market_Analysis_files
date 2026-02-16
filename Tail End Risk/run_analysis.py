@@ -16,12 +16,12 @@ from monte_carlo_risk_engine import MonteCarloRiskEngine
 # ============================================================================
 
 # Stock
-STOCK_SYMBOL = "SPY"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
+STOCK_SYMBOL = "MSFT"           # Change to any stock (e.g., "AAPL", "NVDA", "MSFT")
 
 # Simulation Parameters
-DAYS_TO_SIMULATE = 90           # Trading days to simulate (252 = 1 year, 126 = 6 months)
+DAYS_TO_SIMULATE = 38           # Trading days to simulate (252 = 1 year, 126 = 6 months)
 NUM_SIMULATIONS = 25000         # Number of Monte Carlo paths (more = slower but more accurate)
-HISTORICAL_WINDOW = 252         # Days to look back for volatility calculation
+HISTORICAL_WINDOW = 30         # Days to look back for volatility calculation
 
 # ============================================================================
 # CUSTOM STARTING PRICES (NEW FEATURE)

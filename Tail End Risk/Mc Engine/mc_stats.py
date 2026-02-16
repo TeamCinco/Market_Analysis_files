@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 
-def calculate_statistics(stock_data, historical_window, stock_symbol, risk_free_rate=0.04):
+def calculate_statistics(stock_data, historical_window, stock_symbol, risk_free_rate=0.042):
     """
     Calculate volatility and use risk-free rate as drift proxy.
     """
